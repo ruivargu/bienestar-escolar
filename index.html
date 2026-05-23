@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Encuesta de Bienestar Escolar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700;800&display=swap');
+
+:root {
+  --bg: #f5f0eb;
+  --bg2: #ffffff;
+  --text: #2c2420;
+  --text2: #6b5e56;
+  --accent: #c0653a;
+  --accent2: #2e7d5b;
+  --red: #d44836;
+  --orange: #e8873a;
+  --yellow: #f0c846;
+  --green-light: #7bc67e;
+  --green-dark: #2e7d32;
+  --blue: #4a7fb5;
+  --purple: #7b6fa6;
+  --card-shadow: 0 2px 16px rgba(44,36,32,0.07);
+  --radius: 14px;
+  --font: 'DM Sans', sans-serif;
+  --font-display: 'Playfair Display', serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height:1.6; }
+
+.top-bar {
+  background: linear-gradient(135deg, #3a2518 0%, #5c3d2e 100%);
+  color: #f5f0eb;
+  padding: 40px 0 36px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.top-bar::before {
+  content:''; position:absolute; top:0; left:0; right:0; bottom:0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.top-bar h1 { font-family:var(--font-display); font-size:2.4em; font-weight:800; position:relative; letter-spacing:-0.02em; }
+.top-bar p { font-size:1.05em; opacity:0.8; margin-top:8px; position:relative; max-width:700px; margin-left:auto; margin-right:auto; }
+
+.container { max-width:1200px; margin:0 auto; padding:0 24px; }
+
+nav.tabs {
+  display:flex; gap:6px; justify-content:center; flex-wrap:wrap;
+  margin: -22px auto 30px; position:relative; z-index:10; padding:0 24px;
+}
+nav.tabs button {
+  font-family:var(--font); font-size:0.88em; font-weight:500;
+  padding:10px 20px; border:none; border-radius:50px; cursor:pointer;
+  background: var(--bg2); color: var(--text2); box-shadow: var(--card-shadow);
+  transition: all 0.25s;
+}
+nav.tabs button.active, nav.tabs button:hover {
+  background: var(--accent); color:#fff; transform:translateY(-1px);
+}
+
+.section { display:none; animation: fadeIn 0.4s ease; }
+.section.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+
+.card {
+  background: var(--bg2); border-radius: var(--radius); padding:28px 32px;
+  box-shadow: var(--card-shadow); margin-bottom:24px;
+}
+.card h2 {
+  font-family:var(--font-display); font-size:1.45em; font-weight:700;
+  color: var(--text); margin-bottom:6px; letter-spacing:-0.01em;
+}
+.card h3 { font-size:1.05em; font-weight:600; color:var(--accent); margin:18px 0 10px; }
+.card p, .card li { color: var(--text2); font-size:0.94em; }
+.card ul { padding-left:20px; }
+.card li { margin-bottom:4px; }
+
+.kpi-row { display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:16px; margin-bottom:24px; }
+.kpi {
+  background: var(--bg2); border-radius: var(--radius); padding:22px 24px;
+  box-shadow: var(--card-shadow); text-align:center;
+}
+.kpi .value { font-family:var(--font-display); font-size:2.2em; font-weight:800; color:var(--accent); }
+.kpi .label { font-size:0.85em; color:var(--text2); margin-top:4px; }
+
+.chart-container { position:relative; margin:16px 0; }
+canvas { max-width:100%; }
+
+.bar-row { display:flex; align-items:center; margin-bottom:10px; gap:10px; }
+.bar-label { min-width:260px; font-size:0.82em; color:var(--text); text-align:right; flex-shrink:0; }
+.bar-track { flex:1; height:28px; background:#ede7e0; border-radius:6px; position:relative; overflow:hidden; }
+.bar-fill { height:100%; border-radius:6px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:0.78em; font-weight:600; color:#fff; transition: width 0.8s cubic-bezier(0.22,1,0.36,1); }
+.bar-fill.level-1 { background: var(--red); }
+.bar-fill.level-2 { background: var(--orange); }
+.bar-fill.level-3 { background: var(--yellow); color:var(--text); }
+.bar-fill.level-4 { background: var(--green-light); color:var(--text); }
+.bar-fill.level-5 { background: var(--green-dark); }
+
+.stacked-bar { display:flex; height:32px; border-radius:6px; overflow:hidden; margin-bottom:8px; }
+.stacked-bar .seg { display:flex; align-items:center; justify-content:center; font-size:0.72em; font-weight:600; transition: width 0.6s ease; min-width:0; }
+.stacked-bar .seg.s1 { background:var(--red); color:#fff; }
+.stacked-bar .seg.s2 { background:var(--orange); color:#fff; }
+.stacked-bar .seg.s3 { background:var(--yellow); color:var(--text); }
+.stacked-bar .seg.s4 { background:var(--green-light); color:var(--text); }
+.stacked-bar .seg.s5 { background:var(--green-dark); color:#fff; }
+
+.legend-row { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin:12px 0 18px; font-size:0.82em; }
+.legend-item { display:flex; align-items:center; gap:5px; }
+.legend-dot { width:14px; height:14px; border-radius:3px; }
+
+.grouped-bars { margin:16px 0; }
+.grouped-item { margin-bottom:14px; }
+.grouped-item .item-label { font-size:0.82em; color:var(--text); margin-bottom:4px; font-weight:500; }
+.grouped-item .bars { display:flex; gap:4px; }
+.grouped-item .gbar { height:22px; border-radius:4px; display:flex; align-items:center; padding-left:8px; font-size:0.72em; font-weight:600; transition: width 0.8s cubic-bezier(0.22,1,0.36,1); }
+.gbar.male { background: var(--blue); color:#fff; }
+.gbar.female { background: var(--purple); color:#fff; }
+.gbar.age1 { background: var(--orange); color:#fff; }
+.gbar.age2 { background: var(--blue); color:#fff; }
+.gbar.age3 { background: var(--accent2); color:#fff; }
+
+.heatmap { width:100%; border-collapse:separate; border-spacing:3px; margin:16px 0; font-size:0.8em; }
+.heatmap th { padding:8px 6px; font-weight:600; font-size:0.85em; text-align:center; color:var(--text2); }
+.heatmap th:first-child { text-align:left; min-width:220px; }
+.heatmap td { padding:8px 10px; text-align:center; border-radius:6px; font-weight:600; }
+
+.radar-container { display:flex; justify-content:center; margin:20px 0; }
+
+.alert-card {
+  background: #fff8f5; border-left:4px solid var(--red); border-radius:0 var(--radius) var(--radius) 0;
+  padding:16px 20px; margin-bottom:12px;
+}
+.alert-card .alert-header { font-weight:600; color:var(--red); font-size:0.92em; }
+.alert-card .alert-detail { font-size:0.85em; color:var(--text2); margin-top:4px; }
+
+.conclusion-box {
+  background: linear-gradient(135deg, #f0ebe6 0%, #e8e0d8 100%);
+  border-radius: var(--radius); padding:28px 32px; margin-bottom:16px;
+}
+.conclusion-box h3 { color:var(--accent); margin-top:0; }
+
+.tag { display:inline-block; padding:3px 10px; border-radius:20px; font-size:0.75em; font-weight:600; margin:2px 4px; }
+.tag.strength { background:#e8f5e9; color:var(--green-dark); }
+.tag.concern { background:#fbe9e7; color:var(--red); }
+
+.filter-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+.filter-row label { font-size:0.88em; font-weight:500; color:var(--text2); }
+.filter-row select {
+  font-family:var(--font); font-size:0.88em; padding:6px 14px; border:2px solid #e0d8d0;
+  border-radius:8px; background:var(--bg2); color:var(--text); cursor:pointer;
+}
+
+footer { text-align:center; padding:40px 0 30px; font-size:0.82em; color:var(--text2); }
+
+@media(max-width:768px) {
+  .top-bar h1 { font-size:1.6em; }
+  .bar-label { min-width:140px; font-size:0.75em; }
+  .card { padding:18px 16px; }
+  .kpi-row { grid-template-columns: repeat(2,1fr); }
+  .heatmap { font-size:0.7em; }
+  .heatmap th:first-child { min-width:120px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>🏫 Bienestar Escolar</h1>
+  <p>Análisis de la encuesta sobre percepción de bienestar del alumnado · Curso 2025-2026</p>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button class="active" data-tab="overview">Resumen General</button>
+  <button data-tab="items">Visión por Ítem</button>
+  <button data-tab="distribution">Distribución</button>
+  <button data-tab="gender">Por Género</button>
+  <button data-tab="age">Por Edad</button>
+  <button data-tab="heatmap">Mapa de Calor</button>
+  <button data-tab="dimensions">Dimensiones</button>
+  <button data-tab="alerts">Casos de Atención</button>
+  <button data-tab="conclusions">Conclusiones</button>
+</nav>
+
+<div class="container" id="app">
+  <!-- Sections are rendered by JS -->
+</div>
+
+<footer>
+  Encuesta de Bienestar Escolar · Proyecto de Innovación Educativa - Escuela de Investigadores 25-26
+</footer>
+
+<script>
+// ===== DATA =====
+const DATA=[{"#": 1, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-12", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 1, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 5, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 1, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 2, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-12", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 3, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-12", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 4, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 5, "Cada vez hago mejor las cosas de clase": 1, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 4, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 5, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 5, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 5, "Edad": 7, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 5, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 1, "Mis profes me ayudan cuando lo necesito": 1, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 4, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 6, "Edad": 8, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 1, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 7, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 8, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 1, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 5}, {"#": 9, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 10, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 1, "Juego con los amigos y amigas del cole": 2, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 4, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 5, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 11, "Edad": 7, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 12, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 13, "Edad": 8, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 5, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 14, "Edad": 7, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 15, "Edad": 7, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 16, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 1, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 1, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 5}, {"#": 17, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 4}, {"#": 18, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 19, "Edad": 7, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 1, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 5, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 5}, {"#": 20, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 1, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 21, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 1, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 4}, {"#": 22, "Edad": 8, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 5, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 23, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 4}, {"#": 24, "Edad": 8, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 1, "Mis profes me ayudan cuando lo necesito": 1, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 5, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 25, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 26, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 1, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 4, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 5, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 27, "Edad": 7, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 5, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 1, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 1, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 28, "Edad": 7, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 2, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 29, "Edad": 12, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 4}, {"#": 30, "Edad": 12, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 1, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 5, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 31, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 1, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 32, "Edad": 12, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 5, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 1, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 33, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 1, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 5, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 34, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 5, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 35, "Edad": 12, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 36, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 37, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 5, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 38, "Edad": 12, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 5, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 39, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 1, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 40, "Edad": 12, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 41, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 5, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 42, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 1, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 43, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 44, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 45, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 2, "Mis profes me escuchan cuando tengo algo que contar": 1, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 46, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 2, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 47, "Edad": 12, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 48, "Edad": 12, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 1, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 5, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 49, "Edad": 12, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 50, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 1, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 5, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 51, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 52, "Edad": 12, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 4, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 53, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 5, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 54, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 2, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 1}, {"#": 55, "Edad": 12, "Género": "Mujer", "Fecha": "2026-05-15", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 2, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 1, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 5, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 56, "Edad": 9, "Género": "Mujer", "Fecha": "2026-05-22", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 5, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 5, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 57, "Edad": 12, "Género": "Hombre", "Fecha": "2026-05-22", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 1, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 2, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 4, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 5}, {"#": 58, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-22", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 5, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 5, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 1, "Me siento bien cuando hago los deberes en casa": 4}, {"#": 59, "Edad": 10, "Género": "Mujer", "Fecha": "2026-05-22", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 3, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 60, "Edad": 10, "Género": "Hombre", "Fecha": "2026-05-22", "Me gusta venir al cole": 2, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 1, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 2, "Juego con los amigos y amigas del cole": 5, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 3, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 3, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 4, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 61, "Edad": 11, "Género": "Mujer", "Fecha": "2026-05-22", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 2, "En mi clase estamos a gusto": 4, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 3, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 5, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 1, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 4, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 4, "Me siento bien cuando hago los deberes en casa": 3}, {"#": 62, "Edad": 11, "Género": "Hombre", "Fecha": "2026-05-22", "Me gusta venir al cole": 1, "Me lo paso bien en clase": 3, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 4, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 3, "Mis profes me escuchan cuando tengo algo que contar": 2, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 4, "Me salen bien las actividades de clase": 2, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 3, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 63, "Edad": 10, "Género": "Hombre", "Fecha": "2026-05-22", "Me gusta venir al cole": 4, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 3, "Me tratan bien en el cole": 5, "Juego con los amigos y amigas del cole": 3, "Mis profes me ayudan cuando lo necesito": 4, "Mis profes me escuchan cuando tengo algo que contar": 3, "Puedo decir lo que pienso en clase con respeto": 5, "Puedo elegir alguna actividad o juego": 1, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 1, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 2, "Me siento bien cuando hago los deberes en casa": 2}, {"#": 64, "Edad": 9, "Género": "Hombre", "Fecha": "2026-05-22", "Me gusta venir al cole": 3, "Me lo paso bien en clase": 4, "En mi clase estamos a gusto": 3, "Me siento a gusto con mis compañeros y compañeras": 5, "Me tratan bien en el cole": 1, "Juego con los amigos y amigas del cole": 4, "Mis profes me ayudan cuando lo necesito": 1, "Mis profes me escuchan cuando tengo algo que contar": 4, "Puedo decir lo que pienso en clase con respeto": 2, "Puedo elegir alguna actividad o juego": 2, "Aprendo cosas que me interesan": 2, "Me salen bien las actividades de clase": 3, "Cada vez hago mejor las cosas de clase": 3, "Estoy tranquilo o tranquila cuando hacemos pruebas": 5, "Me siento bien cuando hago los deberes en casa": 3}];
+
+const ITEMS = [
+  "Me gusta venir al cole",
+  "Me lo paso bien en clase",
+  "En mi clase estamos a gusto",
+  "Me siento a gusto con mis compañeros y compañeras",
+  "Me tratan bien en el cole",
+  "Juego con los amigos y amigas del cole",
+  "Mis profes me ayudan cuando lo necesito",
+  "Mis profes me escuchan cuando tengo algo que contar",
+  "Puedo decir lo que pienso en clase con respeto",
+  "Puedo elegir alguna actividad o juego",
+  "Aprendo cosas que me interesan",
+  "Me salen bien las actividades de clase",
+  "Cada vez hago mejor las cosas de clase",
+  "Estoy tranquilo o tranquila cuando hacemos pruebas",
+  "Me siento bien cuando hago los deberes en casa"
+];
+
+const SHORT_ITEMS = [
+  "Gusta venir al cole",
+  "Pasarlo bien en clase",
+  "Estar a gusto en clase",
+  "A gusto con compañeros",
+  "Buen trato en el cole",
+  "Jugar con amigos",
+  "Profes ayudan",
+  "Profes escuchan",
+  "Decir lo que pienso",
+  "Elegir actividad/juego",
+  "Aprender cosas interesantes",
+  "Actividades salen bien",
+  "Mejorar progresivamente",
+  "Tranquilo en pruebas",
+  "Bien con deberes"
+];
+
+const DIMENSIONS = {
+  "Bienestar emocional": [0,1,2],
+  "Relaciones sociales": [3,4,5],
+  "Apoyo docente": [6,7],
+  "Autonomía y participación": [8,9],
+  "Autopercepción académica": [10,11,12,13,14]
+};
+
+const SHORT_DIMS = {
+  "Bienestar emocional": "Bienestar\nemocional",
+  "Relaciones sociales": "Relaciones\nsociales",
+  "Apoyo docente": "Apoyo\ndocente",
+  "Autonomía y participación": "Autonomía y\nparticipación",
+  "Autopercepción académica": "Autopercepción\nacadémica"
+};
+const SCALE_LABELS = ["Casi ningún día","Pocos días","Algunos días","Muchos días","Todos o casi todos"];
+
+// ===== HELPERS =====
+function mean(arr){ return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0; }
+function getItemValues(data,idx){ return data.map(d=>d[ITEMS[idx]]).filter(v=>v!=null); }
+function getColorForValue(v){
+  if(v>=4.2) return 'var(--green-dark)';
+  if(v>=3.5) return 'var(--green-light)';
+  if(v>=2.8) return 'var(--yellow)';
+  if(v>=2.0) return 'var(--orange)';
+  return 'var(--red)';
+}
+function getLevelClass(v){
+  if(v>=4.2) return 'level-5';
+  if(v>=3.5) return 'level-4';
+  if(v>=2.8) return 'level-3';
+  if(v>=2.0) return 'level-2';
+  return 'level-1';
+}
+function heatColor(v){
+  if(v>=4.2) return '#2e7d32; color:#fff';
+  if(v>=3.5) return '#7bc67e; color:#1a3a1a';
+  if(v>=2.8) return '#f0c846; color:#4a3a10';
+  if(v>=2.0) return '#e8873a; color:#fff';
+  return '#d44836; color:#fff';
+}
+function ageGroup(edad){
+  if(edad<=8) return '7-8 años';
+  if(edad<=10) return '9-10 años';
+  return '11-12 años';
+}
+
+// ===== COMPUTE STATS =====
+const stats = {};
+ITEMS.forEach((item,i)=>{
+  const vals = getItemValues(DATA,i);
+  stats[i] = {
+    mean: mean(vals),
+    counts: [0,1,2,3,4,5].map(v=>vals.filter(x=>x===v).length),
+    total: vals.length
+  };
+});
+
+const globalMean = mean(ITEMS.map((_,i)=>stats[i].mean));
+const sorted = ITEMS.map((_,i)=>({idx:i, mean:stats[i].mean})).sort((a,b)=>b.mean-a.mean);
+const best = sorted[0];
+const worst = sorted[sorted.length-1];
+
+const males = DATA.filter(d=>d['Género']==='Hombre');
+const females = DATA.filter(d=>d['Género']==='Mujer');
+const ageGroups = ['7-8 años','9-10 años','11-12 años'];
+const byAge = {};
+ageGroups.forEach(g=>{ byAge[g]=DATA.filter(d=>ageGroup(d['Edad'])===g); });
+
+// ===== RENDER SECTIONS =====
+function renderOverview(){
+  return `
+  <div class="kpi-row">
+    <div class="kpi"><div class="value">${DATA.length}</div><div class="label">Participantes</div></div>
+    <div class="kpi"><div class="value">${globalMean.toFixed(2)}</div><div class="label">Media global de bienestar</div></div>
+    <div class="kpi"><div class="value">${males.length} / ${females.length}</div><div class="label">Hombres / Mujeres</div></div>
+    <div class="kpi"><div class="value">7–12</div><div class="label">Rango de edades</div></div>
+  </div>
+  <div class="card">
+    <h2>Contexto del estudio</h2>
+    <p>Esta encuesta mide la <strong>percepción de bienestar escolar</strong> del alumnado a través de 15 ítems valorados en una escala de 1 (<em>Casi ningún día</em>) a 5 (<em>Todos o casi todos los días</em>). Se recogieron <strong>${DATA.length} respuestas</strong> en el segundo trimestre del curso escolar 25-26, con alumnado de entre 7 y 12 años.</p>
+    <p style="margin-top:10px">La distribución por género es de <strong>${males.length} chicos</strong> (${(males.length/DATA.length*100).toFixed(0)}%) y <strong>${females.length} chicas</strong> (${(females.length/DATA.length*100).toFixed(0)}%). Por edad, el grueso de la muestra se concentra en dos grupos: 7-8 años (${byAge['7-8 años'].length}) y 11-12 años (${byAge['11-12 años'].length}), con un grupo menor de 9-10 años (${byAge['9-10 años'].length}).</p>
+  </div>
+  <div class="card">
+    <h2>Indicadores clave</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+      <div style="padding:16px;background:#e8f5e9;border-radius:10px">
+        <div style="font-weight:600;color:var(--green-dark)">✦ Ítem mejor valorado</div>
+        <div style="font-size:0.92em;margin-top:4px">${ITEMS[best.idx]}</div>
+        <div style="font-family:var(--font-display);font-size:1.8em;color:var(--green-dark)">${best.mean.toFixed(2)}</div>
+      </div>
+      <div style="padding:16px;background:#fbe9e7;border-radius:10px">
+        <div style="font-weight:600;color:var(--red)">⚠ Ítem peor valorado</div>
+        <div style="font-size:0.92em;margin-top:4px">${ITEMS[worst.idx]}</div>
+        <div style="font-family:var(--font-display);font-size:1.8em;color:var(--red)">${worst.mean.toFixed(2)}</div>
+      </div>
+    </div>
+    <h3>Fortalezas y áreas de mejora</h3>
+    <div style="margin-top:8px">
+      <strong style="color:var(--green-dark)">Fortalezas:</strong>
+      ${sorted.slice(0,3).map(s=>`<span class="tag strength">${SHORT_ITEMS[s.idx]} (${s.mean.toFixed(2)})</span>`).join('')}
+    </div>
+    <div style="margin-top:8px">
+      <strong style="color:var(--red)">Áreas de mejora:</strong>
+      ${sorted.slice(-3).reverse().map(s=>`<span class="tag concern">${SHORT_ITEMS[s.idx]} (${s.mean.toFixed(2)})</span>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderItems(){
+  let bars = '';
+  sorted.forEach(s=>{
+    const pct = (s.mean/5*100);
+    bars += `<div class="bar-row">
+      <div class="bar-label">${ITEMS[s.idx]}</div>
+      <div class="bar-track"><div class="bar-fill ${getLevelClass(s.mean)}" style="width:${pct}%">${s.mean.toFixed(2)}</div></div>
+    </div>`;
+  });
+  return `<div class="card">
+    <h2>Media por ítem</h2>
+    <p>Los 15 ítems ordenados de mayor a menor valoración media. El color indica el nivel: <span style="color:var(--green-dark)">■</span> excelente, <span style="color:var(--green-light)">■</span> bueno, <span style="color:var(--yellow)">■</span> moderado, <span style="color:var(--orange)">■</span> bajo, <span style="color:var(--red)">■</span> crítico.</p>
+    <div style="margin-top:18px">${bars}</div>
+    <h3>Interpretación</h3>
+    <p>El alumnado valora muy positivamente las <strong>relaciones con iguales</strong> — jugar con amigos (${stats[5].mean.toFixed(2)}) y sentirse a gusto con compañeros (${stats[3].mean.toFixed(2)}) encabezan el ranking. En el extremo opuesto, la <strong>capacidad de elección</strong> (${stats[9].mean.toFixed(2)}) es el aspecto peor percibido, seguido de <strong>deberes en casa</strong> (${stats[14].mean.toFixed(2)}) y la <strong>tranquilidad ante pruebas</strong> (${stats[13].mean.toFixed(2)}). Esto sugiere que las áreas de autonomía y presión evaluativa son los principales puntos de mejora.</p>
+  </div>`;
+}
+
+function renderDistribution(){
+  const legend = `<div class="legend-row">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Casi ningún día (1)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Pocos días (2)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Algunos días (3)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green-light)"></div>Muchos días (4)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--green-dark)"></div>Todos (5)</div>
+  </div>`;
+  let rows = '';
+  sorted.forEach(s=>{
+    const c = stats[s.idx].counts;
+    const t = stats[s.idx].total;
+    const pcts = [1,2,3,4,5].map(v=>(c[v]/t*100));
+    rows += `<div style="margin-bottom:12px">
+      <div style="font-size:0.82em;font-weight:500;margin-bottom:3px">${ITEMS[s.idx]} <span style="color:var(--text2)">(media: ${s.mean.toFixed(2)})</span></div>
+      <div class="stacked-bar">
+        ${pcts.map((p,i)=>`<div class="seg s${i+1}" style="width:${p}%">${p>=8?(c[i+1]):(p>=5?'':'' )}</div>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.7em;color:var(--text2)">
+        ${[1,2,3,4,5].map(v=>`<span>${c[v]} (${(c[v]/t*100).toFixed(0)}%)</span>`).join('')}
+      </div>
+    </div>`;
+  });
+  return `<div class="card">
+    <h2>Distribución de frecuencias por ítem</h2>
+    <p>Proporción de respuestas en cada nivel de la escala. Permite observar no solo la media sino la dispersión — un ítem con media 3 puede tener respuestas muy concentradas o muy polarizadas.</p>
+    ${legend}
+    ${rows}
+    <h3>Interpretación</h3>
+    <p>El ítem <strong>"Puedo elegir alguna actividad o juego"</strong> concentra un ${(stats[9].counts[1]/stats[9].total*100).toFixed(0)}% de respuestas en "Casi ningún día", lo que refleja una percepción generalizada de escasa autonomía. En contraste, <strong>"Juego con los amigos"</strong> acumula un ${(stats[5].counts[5]/stats[5].total*100).toFixed(0)}% en el nivel máximo. La dispersión es especialmente alta en ítems como "Me gusta venir al cole", donde las respuestas se reparten de forma bastante uniforme por toda la escala.</p>
+  </div>`;
+}
+
+function renderGender(){
+  let rows = '';
+  const diffs = ITEMS.map((_,i)=>{
+    const mH = mean(males.map(d=>d[ITEMS[i]]));
+    const mF = mean(females.map(d=>d[ITEMS[i]]));
+    return {idx:i, mH, mF, diff:mH-mF};
+  }).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
+
+  diffs.forEach(d=>{
+    const maxVal = Math.max(d.mH, d.mF);
+    const highlight = Math.abs(d.diff)>=0.5 ? 'border-left:3px solid var(--accent);padding-left:10px;' : '';
+    rows += `<div class="grouped-item" style="${highlight}">
+      <div class="item-label">${ITEMS[d.idx]} ${Math.abs(d.diff)>=0.5?'<span style="color:var(--accent);font-weight:700">⚡</span>':''}</div>
+      <div class="bars" style="flex-direction:column;gap:3px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:0.72em;min-width:55px;color:var(--blue)">Hombres</span>
+          <div class="gbar male" style="width:${d.mH/5*100}%">${d.mH.toFixed(2)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:0.72em;min-width:55px;color:var(--purple)">Mujeres</span>
+          <div class="gbar female" style="width:${d.mF/5*100}%">${d.mF.toFixed(2)}</div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  const biggestDiffs = diffs.filter(d=>Math.abs(d.diff)>=0.4);
+
+  return `<div class="card">
+    <h2>Análisis por género</h2>
+    <p>Comparativa de medias entre <span style="color:var(--blue);font-weight:600">chicos (${males.length})</span> y <span style="color:var(--purple);font-weight:600">chicas (${females.length})</span>. Los ítems están ordenados por magnitud de la diferencia. El icono ⚡ marca diferencias ≥ 0,5 puntos.</p>
+    <div style="margin-top:16px">${rows}</div>
+    <h3>Interpretación</h3>
+    <p>Las diferencias de género más notables se dan en:
+    ${biggestDiffs.map(d=>`<strong>${SHORT_ITEMS[d.idx]}</strong> (${d.diff>0?'chicos':'chicas'} +${Math.abs(d.diff).toFixed(2)})`).join(', ')}.
+    Las chicas se perciben significativamente <strong>menos tranquilas ante las pruebas</strong> y reportan en menor grado poder expresarse en clase. Sin embargo, muestran mayor percepción de <strong>mejora progresiva</strong> en su aprendizaje. Estos patrones sugieren posibles diferencias en la vivencia de la presión evaluativa y en la autopercepción de competencia.</p>
+  </div>`;
+}
+
+function renderAge(){
+  const colors = ['age1','age2','age3'];
+  let rows = '';
+  ITEMS.forEach((item,i)=>{
+    rows += `<div class="grouped-item">
+      <div class="item-label">${item}</div>
+      <div class="bars" style="flex-direction:column;gap:3px">
+        ${ageGroups.map((g,j)=>{
+          const m = mean(byAge[g].map(d=>d[item]));
+          return `<div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:0.72em;min-width:65px;color:var(--text2)">${g}</span>
+            <div class="gbar ${colors[j]}" style="width:${m/5*100}%">${m.toFixed(2)}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  });
+
+  return `<div class="card">
+    <h2>Análisis por grupo de edad</h2>
+    <p>Comparativa entre los tres grupos de edad: <span style="color:var(--orange);font-weight:600">7-8 años (${byAge['7-8 años'].length})</span>, <span style="color:var(--blue);font-weight:600">9-10 años (${byAge['9-10 años'].length})</span> y <span style="color:var(--accent2);font-weight:600">11-12 años (${byAge['11-12 años'].length})</span>.</p>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>7-8 años</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>9-10 años</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent2)"></div>11-12 años</div>
+    </div>
+    <div style="margin-top:12px">${rows}</div>
+    <h3>Interpretación</h3>
+    <p>Se observan patrones interesantes por edad. Los <strong>más pequeños (7-8)</strong> disfrutan más en clase (${mean(byAge['7-8 años'].map(d=>d[ITEMS[1]])).toFixed(2)}) y perciben más opciones de elección (${mean(byAge['7-8 años'].map(d=>d[ITEMS[9]])).toFixed(2)}). Los <strong>mayores (11-12)</strong> juegan más con amigos (${mean(byAge['11-12 años'].map(d=>d[ITEMS[5]])).toFixed(2)}) y perciben mejor clima de aula (${mean(byAge['11-12 años'].map(d=>d[ITEMS[2]])).toFixed(2)}), pero su percepción de autonomía cae drásticamente (${mean(byAge['11-12 años'].map(d=>d[ITEMS[9]])).toFixed(2)}). El grupo de <strong>9-10 años</strong>, aunque pequeño (n=${byAge['9-10 años'].length}), muestra valores altos en relaciones sociales pero los más bajos en clima de aula (${mean(byAge['9-10 años'].map(d=>d[ITEMS[2]])).toFixed(2)}).</p>
+  </div>`;
+}
+
+function renderHeatmap(){
+  // Gender heatmap
+  let genderRows = '';
+  ITEMS.forEach((item,i)=>{
+    const mH = mean(males.map(d=>d[item]));
+    const mF = mean(females.map(d=>d[item]));
+    const mT = stats[i].mean;
+    genderRows += `<tr>
+      <th style="text-align:left;font-weight:400">${SHORT_ITEMS[i]}</th>
+      <td style="background:${heatColor(mT)}">${mT.toFixed(2)}</td>
+      <td style="background:${heatColor(mH)}">${mH.toFixed(2)}</td>
+      <td style="background:${heatColor(mF)}">${mF.toFixed(2)}</td>
+    </tr>`;
+  });
+
+  // Age heatmap
+  let ageRows = '';
+  ITEMS.forEach((item,i)=>{
+    const mT = stats[i].mean;
+    ageRows += `<tr>
+      <th style="text-align:left;font-weight:400">${SHORT_ITEMS[i]}</th>
+      <td style="background:${heatColor(mT)}">${mT.toFixed(2)}</td>
+      ${ageGroups.map(g=>{
+        const m = mean(byAge[g].map(d=>d[item]));
+        return `<td style="background:${heatColor(m)}">${m.toFixed(2)}</td>`;
+      }).join('')}
+    </tr>`;
+  });
+
+  return `<div class="card">
+    <h2>Mapa de calor — Por género</h2>
+    <p>Cada celda muestra la media del ítem para el subgrupo. El color va de <span style="color:var(--red)">■ rojo</span> (≤2.0) a <span style="color:var(--green-dark)">■ verde</span> (≥4.2).</p>
+    <div style="overflow-x:auto">
+    <table class="heatmap">
+      <thead><tr><th>Ítem</th><th>Global</th><th>Hombres</th><th>Mujeres</th></tr></thead>
+      <tbody>${genderRows}</tbody>
+    </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Mapa de calor — Por edad</h2>
+    <div style="overflow-x:auto">
+    <table class="heatmap">
+      <thead><tr><th>Ítem</th><th>Global</th>${ageGroups.map(g=>`<th>${g}</th>`).join('')}</tr></thead>
+      <tbody>${ageRows}</tbody>
+    </table>
+    </div>
+    <h3>Lectura rápida</h3>
+    <p>Las celdas en rojo/naranja identifican los puntos de intervención prioritaria. A nivel global, <strong>"Elegir actividad"</strong> y <strong>"Deberes en casa"</strong> son los únicos ítems por debajo de 2.5. Las mayores concentraciones de rojo aparecen en el cruce de <strong>chicas × tranquilidad ante pruebas</strong> y <strong>11-12 años × autonomía de elección</strong>.</p>
+  </div>`;
+}
+
+function renderDimensions(){
+  // Compute dimension means
+  const dimStats = {};
+  Object.entries(DIMENSIONS).forEach(([dim, indices])=>{
+    dimStats[dim] = {
+      global: mean(indices.map(i=>stats[i].mean)),
+      male: mean(indices.map(i=>mean(males.map(d=>d[ITEMS[i]])))),
+      female: mean(indices.map(i=>mean(females.map(d=>d[ITEMS[i]])))),
+    };
+    ageGroups.forEach(g=>{
+      dimStats[dim][g] = mean(indices.map(i=>mean(byAge[g].map(d=>d[ITEMS[i]]))));
+    });
+  });
+
+  // SVG radar chart
+  const dims = Object.keys(DIMENSIONS);
+  const n = dims.length;
+  const cx=250, cy=220, maxR=140;
+  const angles = dims.map((_,i)=> -Math.PI/2 + (2*Math.PI*i/n));
+
+  function radarPoints(values, radius){
+    return values.map((v,i)=>{
+      const r = (v/5)*radius;
+      return `${cx+r*Math.cos(angles[i])},${cy+r*Math.sin(angles[i])}`;
+    }).join(' ');
+  }
+
+  // Grid
+  let gridLines = '';
+  [1,2,3,4,5].forEach(level=>{
+    const r = (level/5)*maxR;
+    const pts = angles.map(a=>`${cx+r*Math.cos(a)},${cy+r*Math.sin(a)}`).join(' ');
+    gridLines += `<polygon points="${pts}" fill="none" stroke="#d0c8c0" stroke-width="0.5" stroke-dasharray="${level<5?'3,3':''}"/>`;
+  });
+  // Axis lines
+  angles.forEach(a=>{
+    gridLines += `<line x1="${cx}" y1="${cy}" x2="${cx+maxR*Math.cos(a)}" y2="${cy+maxR*Math.sin(a)}" stroke="#d0c8c0" stroke-width="0.5"/>`;
+  });
+  // Labels
+  let labels = '';
+  dims.forEach((dim,i)=>{
+    const labelR = maxR + 45;
+    const lx = cx + labelR*Math.cos(angles[i]);
+    const ly = cy + labelR*Math.sin(angles[i]);
+    const anchor = Math.abs(Math.cos(angles[i]))<0.1 ? 'middle' : (Math.cos(angles[i])>0?'start':'end');
+    const parts = dim.split(/\s+/);
+    if(parts.length<=2){
+      labels += `<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="central" font-size="11.5" font-weight="600" fill="#5c4a40">${dim}</text>`;
+    } else {
+      const mid = Math.ceil(parts.length/2);
+      const line1 = parts.slice(0,mid).join(' ');
+      const line2 = parts.slice(mid).join(' ');
+      labels += `<text x="${lx}" y="${ly-8}" text-anchor="${anchor}" dominant-baseline="central" font-size="11.5" font-weight="600" fill="#5c4a40">${line1}</text>`;
+      labels += `<text x="${lx}" y="${ly+8}" text-anchor="${anchor}" dominant-baseline="central" font-size="11.5" font-weight="600" fill="#5c4a40">${line2}</text>`;
+    }
+  });
+
+  const globalVals = dims.map(d=>dimStats[d].global);
+  const maleVals = dims.map(d=>dimStats[d].male);
+  const femaleVals = dims.map(d=>dimStats[d].female);
+
+  const radarSvg = `<svg viewBox="0 0 500 470" width="500" height="470" style="max-width:100%">
+    ${gridLines}
+    <polygon points="${radarPoints(globalVals,maxR)}" fill="rgba(192,101,58,0.15)" stroke="var(--accent)" stroke-width="2.5"/>
+    <polygon points="${radarPoints(maleVals,maxR)}" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <polygon points="${radarPoints(femaleVals,maxR)}" fill="none" stroke="var(--purple)" stroke-width="1.5" stroke-dasharray="6,3"/>
+    ${globalVals.map((v,i)=>{
+      const r=(v/5)*maxR;
+      return `<circle cx="${cx+r*Math.cos(angles[i])}" cy="${cy+r*Math.sin(angles[i])}" r="4" fill="var(--accent)"/>`;
+    }).join('')}
+    ${labels}
+    <text x="60" y="450" font-size="10" fill="var(--text2)">── Global</text>
+    <text x="180" y="450" font-size="10" fill="var(--blue)">- - Hombres</text>
+    <text x="290" y="450" font-size="10" fill="var(--purple)">- - Mujeres</text>
+  </svg>`;
+
+  let dimCards = '';
+  Object.entries(DIMENSIONS).forEach(([dim, indices])=>{
+    const dimMean = dimStats[dim].global;
+    const itemList = indices.map(i=>`<span style="font-size:0.85em">${SHORT_ITEMS[i]}: <strong>${stats[i].mean.toFixed(2)}</strong></span>`).join(' · ');
+    dimCards += `<div style="padding:14px 18px;background:${dimMean>=3?'#f0f7f0':'#fef5f0'};border-radius:10px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600">${dim}</span>
+        <span style="font-family:var(--font-display);font-size:1.4em;color:${getColorForValue(dimMean)}">${dimMean.toFixed(2)}</span>
+      </div>
+      <div style="margin-top:6px">${itemList}</div>
+    </div>`;
+  });
+
+  return `<div class="card">
+    <h2>Análisis por dimensiones</h2>
+    <p>Los 15 ítems agrupados en 5 dimensiones temáticas. El gráfico radar muestra el perfil global y las diferencias por género.</p>
+    <div class="radar-container">${radarSvg}</div>
+    ${dimCards}
+    <h3>Interpretación</h3>
+    <p>La dimensión de <strong>Relaciones sociales</strong> (${dimStats['Relaciones sociales'].global.toFixed(2)}) es la más sólida del estudio, reflejando que el alumnado se siente integrado en su entorno de iguales. Le sigue el <strong>Apoyo docente</strong> (${dimStats['Apoyo docente'].global.toFixed(2)}), percibido como moderadamente positivo. La dimensión más débil es <strong>Autonomía y participación</strong> (${dimStats['Autonomía y participación'].global.toFixed(2)}), que revela una carencia significativa en la capacidad percibida de tomar decisiones sobre su aprendizaje. La <strong>Autopercepción académica</strong> (${dimStats['Autopercepción académica'].global.toFixed(2)}) muestra un nivel intermedio-bajo, arrastrada especialmente por los ítems de deberes y pruebas.</p>
+  </div>`;
+}
+
+function renderAlerts(){
+  // Identify students with many low scores (1 or 2)
+  const alerts = DATA.map(d=>{
+    const lowItems = [];
+    ITEMS.forEach((item,i)=>{
+      if(d[item]<=2) lowItems.push({item:SHORT_ITEMS[i], value:d[item]});
+    });
+    return { num:d['#'], edad:d['Edad'], genero:d['Género'], lowCount:lowItems.length, lowItems };
+  }).filter(a=>a.lowCount>=7).sort((a,b)=>b.lowCount-a.lowCount);
+
+  // Also compute individual global means
+  const indivMeans = DATA.map(d=>{
+    const vals = ITEMS.map(item=>d[item]);
+    return { num:d['#'], edad:d['Edad'], genero:d['Género'], mean:mean(vals) };
+  }).sort((a,b)=>a.mean-b.mean);
+
+  const lowMean = indivMeans.filter(d=>d.mean<2.5);
+
+  let alertCards = '';
+  if(alerts.length===0){
+    alertCards = '<p style="color:var(--text2);font-style:italic">No se han identificado casos con 7 o más ítems en niveles bajos (1-2).</p>';
+  } else {
+    alerts.forEach(a=>{
+      alertCards += `<div class="alert-card">
+        <div class="alert-header">Sujeto #${a.num} — ${a.genero}, ${a.edad} años — ${a.lowCount} ítems en nivel bajo</div>
+        <div class="alert-detail">Ítems con puntuación ≤2: ${a.lowItems.map(li=>`${li.item} (${li.value})`).join(', ')}</div>
+      </div>`;
+    });
+  }
+
+  let lowMeanCards = '';
+  lowMean.forEach(d=>{
+    lowMeanCards += `<div class="alert-card">
+      <div class="alert-header">Sujeto #${d.num} — ${d.genero}, ${d.edad} años — Media individual: ${d.mean.toFixed(2)}</div>
+    </div>`;
+  });
+
+  return `<div class="card">
+    <h2>Casos de atención</h2>
+    <p>Alumnos/as que acumulan <strong>7 o más ítems</strong> con puntuaciones de "Pocos días" (2) o "Casi ningún día" (1), lo que puede indicar una vivencia significativamente negativa del entorno escolar.</p>
+    <h3>Por acumulación de ítems bajos (≥7 de 15)</h3>
+    ${alertCards}
+    <h3>Por media individual más baja (&lt;2.5)</h3>
+    ${lowMeanCards.length?lowMeanCards:'<p style="color:var(--text2);font-style:italic">Ningún alumno/a tiene una media individual inferior a 2.5.</p>'}
+    <h3>Nota metodológica</h3>
+    <p>Estos indicadores son orientativos y no sustituyen una valoración profesional. Sirven para señalar perfiles que podrían beneficiarse de una atención más personalizada. Se presentan por número de sujeto para preservar el anonimato.</p>
+  </div>`;
+}
+
+function renderConclusions(){
+  // Auto-generated conclusions based on data
+  const dimStats2 = {};
+  Object.entries(DIMENSIONS).forEach(([dim, indices])=>{
+    dimStats2[dim] = mean(indices.map(i=>stats[i].mean));
+  });
+  const bestDim = Object.entries(dimStats2).sort((a,b)=>b[1]-a[1])[0];
+  const worstDim = Object.entries(dimStats2).sort((a,b)=>a[1]-b[1])[0];
+
+  return `<div class="card">
+    <h2>Conclusiones y recomendaciones</h2>
+    
+    <div class="conclusion-box">
+      <h3>1. Principales hallazgos</h3>
+      <ul>
+        <li>El <strong>bienestar global</strong> del alumnado se sitúa en ${globalMean.toFixed(2)} sobre 5, un nivel <strong>${globalMean>=3.5?'positivo':globalMean>=2.8?'moderado':'mejorable'}</strong>.</li>
+        <li>La dimensión más fuerte es <strong>${bestDim[0]}</strong> (${bestDim[1].toFixed(2)}): el alumnado se siente integrado socialmente.</li>
+        <li>La dimensión más débil es <strong>${worstDim[0]}</strong> (${worstDim[1].toFixed(2)}): se percibe escasa capacidad de decisión sobre el propio aprendizaje.</li>
+        <li>Existe una <strong>brecha de género</strong> significativa en tranquilidad ante pruebas (${mean(males.map(d=>d[ITEMS[13]])).toFixed(2)} chicos vs ${mean(females.map(d=>d[ITEMS[13]])).toFixed(2)} chicas) y expresión en clase.</li>
+        <li>La percepción de <strong>autonomía decrece con la edad</strong>: de ${mean(byAge['7-8 años'].map(d=>d[ITEMS[9]])).toFixed(2)} (7-8 años) a ${mean(byAge['11-12 años'].map(d=>d[ITEMS[9]])).toFixed(2)} (11-12 años).</li>
+      </ul>
+    </div>
+
+    <div class="conclusion-box">
+      <h3>2. Líneas de actuación sugeridas</h3>
+      <ul>
+        <li><strong>Fomentar la autonomía y la capacidad de elección:</strong> introducir momentos de decisión sobre actividades, proyectos o metodologías, especialmente en los cursos superiores donde esta percepción es más baja.</li>
+        <li><strong>Reducir la ansiedad evaluativa:</strong> revisar las prácticas de evaluación para incorporar formatos menos estresantes, ofrecer retroalimentación formativa y trabajar estrategias de gestión emocional ante pruebas, con especial atención a las alumnas.</li>
+        <li><strong>Repensar los deberes:</strong> el ítem sobre deberes es uno de los peor valorados en todos los subgrupos. Conviene reflexionar sobre su cantidad, tipo y finalidad pedagógica.</li>
+        <li><strong>Potenciar la voz del alumnado:</strong> crear espacios seguros de expresión (asambleas, buzón de sugerencias, tutorías participativas) para mejorar la percepción de "poder decir lo que pienso".</li>
+        <li><strong>Mantener y reforzar las fortalezas:</strong> las relaciones entre iguales y con el profesorado son los pilares del bienestar percibido. Seguir cultivando dinámicas de grupo y disponibilidad docente.</li>
+      </ul>
+    </div>
+
+    <div class="conclusion-box">
+      <h3>3. Limitaciones del estudio</h3>
+      <ul>
+        <li>Muestra de ${DATA.length} participantes — los resultados son orientativos y no extrapolables sin precaución.</li>
+        <li>El grupo de 9-10 años (n=${byAge['9-10 años'].length}) es demasiado reducido para conclusiones firmes.</li>
+        <li>La escala de 5 niveles, adaptada a las edades, puede simplificar matices de la experiencia subjetiva.</li>
+        <li>Se trata de una medición transversal (un único momento temporal). Se recomienda repetir la encuesta para analizar evolución.</li>
+      </ul>
+    </div>
+  </div>`;
+}
+
+// ===== TAB NAVIGATION =====
+const sections = {
+  overview: renderOverview,
+  items: renderItems,
+  distribution: renderDistribution,
+  gender: renderGender,
+  age: renderAge,
+  heatmap: renderHeatmap,
+  dimensions: renderDimensions,
+  alerts: renderAlerts,
+  conclusions: renderConclusions
+};
+
+const app = document.getElementById('app');
+const tabButtons = document.querySelectorAll('#tabs button');
+let currentTab = 'overview';
+
+function showTab(tab){
+  currentTab = tab;
+  tabButtons.forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===tab);
+  });
+  app.innerHTML = `<div class="section active">${sections[tab]()}</div>`;
+  window.scrollTo({top:200, behavior:'smooth'});
+}
+
+tabButtons.forEach(b=>{
+  b.addEventListener('click', ()=>showTab(b.dataset.tab));
+});
+
+showTab('overview');
+</script>
+</body>
+</html>
